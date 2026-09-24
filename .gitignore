@@ -1,0 +1,25 @@
+.venv/
+__pycache__/
+*.pyc
+# Checkpoints are large (GBs) and not reproducible-from-source -- keep the
+# lightweight comparison-track artifacts (plots, results.jsonl, notes)
+# directly under checkpoints/compare/, but skip every per-run subdirectory
+# (checkpoints themselves + train.log).
+checkpoints/*
+!checkpoints/.gitkeep
+!checkpoints/compare/
+checkpoints/compare/*
+!checkpoints/compare/*.png
+!checkpoints/compare/*.jsonl
+!checkpoints/compare/*.md
+# Raw/prepared corpora are multi-GB and regenerable via
+# scratch_llm.data.download_corpus / prepare_data -- keep only the small
+# fixed English corpus used by tests/.
+data/raw/*
+!data/raw/sample_corpus.txt
+data/prepared_1b/
+data/processed/
+data/tokenizer/
+tokenizers/
+*.egg-info/
+.pytest_cache/

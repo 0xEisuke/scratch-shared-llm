@@ -1,0 +1,19 @@
+# Weight-sharing variant 2: a single Decoder Layer (attention AND FFN) is
+# reused by every one of the 16 layers. Same d_model/d_ff/vocab as
+# model_1024.yaml so it's an apples-to-apples comparison against the
+# standard (independent-layer) model at the same width.
+# Note: attn_norm/ffn_norm stay independent per layer regardless of
+# attn_sharing/ffn_sharing -- see scratch_llm/model/block.py.
+vocab_size: 32000
+d_model: 1024
+n_layers: 16
+n_heads: 8
+d_ff: 2816
+max_seq_len: 512
+rope_theta: 10000.0
+rms_norm_eps: 1.0e-5
+dropout: 0.0
+tie_embeddings: true
+attn_sharing: full
+ffn_sharing: full
+eos_token_id: 31999

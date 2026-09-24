@@ -1,0 +1,14 @@
+# ~0.5B parameter decoder-only Transformer (Llama-style: RMSNorm, RoPE, SwiGLU).
+# Actual total parameter count is computed and printed by the code, not hardcoded here.
+vocab_size: 16000
+d_model: 1536
+n_layers: 16
+n_heads: 24
+d_ff: 4096
+max_seq_len: 2048
+rope_theta: 10000.0
+rms_norm_eps: 1.0e-5
+dropout: 0.0
+tie_embeddings: false
+attn_sharing: none
+ffn_sharing: none

@@ -1,0 +1,9 @@
+torch>=2.3
+sentencepiece>=0.2
+numpy>=1.26
+pyyaml>=6.0
+tqdm>=4.66
+pytest>=8.0
+transformers>=4.45
+datasets>=3.0
+matplotlib>=3.8

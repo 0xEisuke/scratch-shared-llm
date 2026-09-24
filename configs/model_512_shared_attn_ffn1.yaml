@@ -1,0 +1,20 @@
+# Weight-sharing sweep at d_model=512: Attention shared across all 16
+# layers (same as model_512_shared_attn.yaml), FFN unique count = 1 (all
+# 16 layers share a single FFN instance, i.e. attn+FFN both fully shared --
+# equivalent to ffn_sharing: full). LayerNorm stays independent per layer
+# as always. Everything else identical to model_512_shared_attn.yaml --
+# only ffn_sharing changed. Completes the FFN-unique-count sweep
+# (16/8/4/2/1) at d_model=512 alongside model_512_shared_attn_ffn{8,4,2}.yaml.
+vocab_size: 32000
+d_model: 512
+n_layers: 16
+n_heads: 8
+d_ff: 1280
+max_seq_len: 512
+rope_theta: 10000.0
+rms_norm_eps: 1.0e-5
+dropout: 0.0
+tie_embeddings: true
+attn_sharing: full
+ffn_sharing: full
+eos_token_id: 31999

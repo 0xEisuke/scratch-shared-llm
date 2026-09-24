@@ -1,0 +1,18 @@
+# Parameter-matched widening experiment (continued from ffn4_dff5120.yaml):
+# FFN unique=2 (8 consecutive layers per shared FFN instance), intermediate_size
+# doubled again to 10240 to keep total FFN params constant:
+# 2 * 3*512*10240 = 31,457,280 -- same as the 16x1280 baseline and previous steps.
+# Everything else (d_model, attn_sharing=full, vocab/context/etc.) unchanged.
+vocab_size: 32000
+d_model: 512
+n_layers: 16
+n_heads: 8
+d_ff: 10240
+max_seq_len: 512
+rope_theta: 10000.0
+rms_norm_eps: 1.0e-5
+dropout: 0.0
+tie_embeddings: true
+attn_sharing: full
+ffn_sharing: 2
+eos_token_id: 31999

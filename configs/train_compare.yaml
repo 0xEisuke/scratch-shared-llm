@@ -1,0 +1,46 @@
+# Shared training config for the standard-vs-shared-weight comparison
+# (1 epoch over an identical ~1B-token corpus for every model, per the
+# experiment spec). One file drives all 6 runs; out_dir/run_name/
+# results_path/max_steps are overridden per run via train.py's CLI flags
+# rather than duplicated across 6 yaml files.
+#
+# batch_size=24 (not a rounder number) is not arbitrary: on this machine's
+# RTX 4090 (24GB), batch_size=64 (the original assumption) OOMs even for
+# the smallest-compute d_model=1024 standard model at ~27GB peak -- the
+# packed-sequence mask was checked and is NOT the cause (disabling it
+# changes memory/speed by <2%); the model/batch/seq_len combination itself
+# just needs ~3.8 + 0.7*batch_size GB. batch_size=24 (~20.6GB peak) leaves
+# a safe margin and is confirmed working for a real training step at
+# d_model=1024 -- see conversation history / commit log for the
+# benchmark. max_steps below matches batch_size=24, grad_accum_steps=1
+# against data/prepared_1b; if you point this at a different prepared
+# data-dir or change batch_size/grad_accum_steps, recompute it:
+#   python -m scratch_llm.compute_epoch_steps --data-dir <prepared data dir> \
+#       --batch-size 24 --grad-accum-steps 1
+# then pass the printed value via `--max-steps` (do not just edit this
+# file's max_steps without also matching batch_size at train time).
+batch_size: 24
+grad_accum_steps: 1
+max_steps: 81140
+lr: 3.0e-4
+min_lr: 3.0e-5
+warmup_steps: 300
+weight_decay: 0.1
+beta1: 0.9
+beta2: 0.95
+grad_clip: 1.0
+dtype: bf16
+device: cuda
+seed: 1337
+log_interval: 200
+eval_interval: 2000
+eval_iters: 50
+# save_interval kept high (not the naive default) since each checkpoint is
+# ~3x the model's raw parameter bytes (model + 2 AdamW moment buffers) and
+# max_steps is now ~81k -- a small interval would burn through disk
+# quickly across 6 runs. Recompute chosen so each run keeps roughly 8
+# timestamped checkpoints in addition to ckpt_latest.pt.
+save_interval: 10000
+out_dir: checkpoints/compare/UNSET
+run_name: UNSET
+results_path: checkpoints/compare/results.jsonl

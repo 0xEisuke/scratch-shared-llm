@@ -1,0 +1,21 @@
+# Standard (independent-layer) comparison model, d_model=880.
+# Added after the first 6 runs to test the report's "effective d_model"
+# estimate: shared_attn_1024 lands at an effective d_model of ~883 on the
+# standard-model trend line, so this is the nearest standard model that
+# n_heads=8 admits (880 = 8 x 110). Everything else is identical to
+# model_256/512/768/1024.yaml, including the
+# intermediate_size = round((8/3 * d_model) / 256) * 256 rounding rule
+# (round(9.167) = 9 -> 2304).
+vocab_size: 32000
+d_model: 880
+n_layers: 16
+n_heads: 8
+d_ff: 2304
+max_seq_len: 512
+rope_theta: 10000.0
+rms_norm_eps: 1.0e-5
+dropout: 0.0
+tie_embeddings: true
+attn_sharing: none
+ffn_sharing: none
+eos_token_id: 31999

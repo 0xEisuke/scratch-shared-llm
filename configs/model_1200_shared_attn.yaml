@@ -1,0 +1,23 @@
+# Weight-sharing variant 3 (attention-only sharing), d_model=1200.
+# Added to test whether pushing shared_attn_1024's d_model up (while staying
+# under standard_1024's parameter budget) can beat standard_1024's val_loss --
+# see mdfiles/sharing_comparison_report.md and the params-vs-val-loss trend
+# analysis. Same architecture/sharing pattern as model_1024_shared_attn.yaml
+# (only Self-Attention reused across all 16 layers; FFN and LayerNorm stay
+# independent per layer), only d_model/d_ff changed.
+# d_ff = round((8/3 * d_model) / 256) * 256 = round(12.5) * 256 = 12 * 256 = 3072
+# (Python round-half-to-even: round(12.5) -> 12), same rounding rule as every
+# other model in this comparison track.
+vocab_size: 32000
+d_model: 1200
+n_layers: 16
+n_heads: 8
+d_ff: 3072
+max_seq_len: 512
+rope_theta: 10000.0
+rms_norm_eps: 1.0e-5
+dropout: 0.0
+tie_embeddings: true
+attn_sharing: full
+ffn_sharing: none
+eos_token_id: 31999

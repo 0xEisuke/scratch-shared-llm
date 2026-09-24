@@ -1,0 +1,21 @@
+# Attention-sharing-pattern experiment at d_model=512 (FFN independent per
+# layer, same as model_512.yaml/model_512_shared_attn.yaml's baseline
+# FFN config): 2 unique Attention instances assigned round-robin --
+# layer i uses instance (i % 2), giving (A B)^8 across the 16 layers.
+# Same Attention unique count (2) and hence same total params as
+# model_512_shared_attn_stageAB.yaml, which uses the same 2 instances but
+# blocked A^8 B^8 instead. Everything else identical to
+# model_512_shared_attn.yaml.
+vocab_size: 32000
+d_model: 512
+n_layers: 16
+n_heads: 8
+d_ff: 1280
+max_seq_len: 512
+rope_theta: 10000.0
+rms_norm_eps: 1.0e-5
+dropout: 0.0
+tie_embeddings: true
+attn_sharing: cyclic2
+ffn_sharing: none
+eos_token_id: 31999

@@ -1,0 +1,15 @@
+# Standard (independent-layer) comparison model, d_model=768.
+# See model_256.yaml for the shared rounding rule / tokenizer notes.
+vocab_size: 32000
+d_model: 768
+n_layers: 16
+n_heads: 8
+d_ff: 2048
+max_seq_len: 512
+rope_theta: 10000.0
+rms_norm_eps: 1.0e-5
+dropout: 0.0
+tie_embeddings: true
+attn_sharing: none
+ffn_sharing: none
+eos_token_id: 31999

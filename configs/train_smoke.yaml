@@ -1,0 +1,19 @@
+# Small-scale config for the pipeline smoke test.
+batch_size: 4
+grad_accum_steps: 2
+max_steps: 30
+lr: 3.0e-3
+min_lr: 3.0e-4
+warmup_steps: 5
+weight_decay: 0.01
+beta1: 0.9
+beta2: 0.95
+grad_clip: 1.0
+dtype: bf16
+device: cuda
+seed: 1337
+log_interval: 5
+eval_interval: 10
+eval_iters: 5
+save_interval: 15
+out_dir: checkpoints/smoke

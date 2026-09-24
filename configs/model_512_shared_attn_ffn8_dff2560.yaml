@@ -1,0 +1,22 @@
+# Parameter-matched widening experiment: baseline is model_512_shared_attn.yaml
+# (FFN unique=16, d_ff=1280, total FFN params = 16 * 3*512*1280 = 31,457,280).
+# Here FFN unique is halved to 8 (2 consecutive layers per shared FFN
+# instance) and d_ff doubled to 2560 to compensate: 8 * 3*512*2560 =
+# 31,457,280 -- identical total FFN params, and hence identical total model
+# params, to the ffn16/d_ff1280 baseline. Everything else (d_model,
+# attn_sharing=full, vocab/context/etc.) unchanged, for a direct
+# "many narrow layer-specific FFNs" vs "fewer, wider shared FFNs" comparison
+# at matched parameter count.
+vocab_size: 32000
+d_model: 512
+n_layers: 16
+n_heads: 8
+d_ff: 2560
+max_seq_len: 512
+rope_theta: 10000.0
+rms_norm_eps: 1.0e-5
+dropout: 0.0
+tie_embeddings: true
+attn_sharing: full
+ffn_sharing: 8
+eos_token_id: 31999

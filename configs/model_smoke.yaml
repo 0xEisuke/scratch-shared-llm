@@ -1,0 +1,15 @@
+# Tiny config used only for pipeline smoke tests / overfit sanity checks.
+# vocab_size must match whatever tokenizer is trained for the smoke test
+# (see tests/test_smoke.py, which trains one with vocab_size=512).
+vocab_size: 512
+d_model: 64
+n_layers: 2
+n_heads: 2
+d_ff: 176
+max_seq_len: 128
+rope_theta: 10000.0
+rms_norm_eps: 1.0e-5
+dropout: 0.0
+tie_embeddings: true
+attn_sharing: none
+ffn_sharing: none

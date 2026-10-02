@@ -1,0 +1,24 @@
+# Attention-unique-count experiment at d_model=1200: same as
+# model_1200_shared_attn.yaml (FFN independent per layer, d_ff=3072) but
+# Attention unique count raised from 1 (attn_sharing: full) to 2
+# (attn_sharing: 2, stage grouping -- layers 0-7 share instance A, layers
+# 8-15 share instance B). Goal: check whether the extra attention capacity
+# lets this stay below standard_1024's param count (238,322,688) while
+# also beating its Val Loss (2.590447) -- shared_attn_1200 (unique=1) came
+# in essentially tied (2.591422). Same head_dim=150 SDPA/VRAM caveat as
+# model_1200_shared_attn.yaml applies (see mdfiles/sharing_comparison_report.md
+# and project_headdim128_vram_cliff notes) -- preflight before choosing
+# batch_size/grad_accum_steps.
+vocab_size: 32000
+d_model: 1200
+n_layers: 16
+n_heads: 8
+d_ff: 3072
+max_seq_len: 512
+rope_theta: 10000.0
+rms_norm_eps: 1.0e-5
+dropout: 0.0
+tie_embeddings: true
+attn_sharing: 2
+ffn_sharing: none
+eos_token_id: 31999

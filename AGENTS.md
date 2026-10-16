@@ -134,6 +134,7 @@ scratch_llm/
     prepare_data.py                     # tokenize -> [truncate to --max-tokens] -> chunk_tokens() -> .bin/meta.json
     download_corpus.py                   # streams a public HF dataset (default ja Wikipedia) to a raw text file
     dataset.py                            # ChunkedTokenDataset, memmap-backed
+    sampler.py                            # ResumableShuffleBatchSampler: seed-only shuffle order, re-enterable at any batch
   checkpoint.py                          # save/load_checkpoint (model+optim+step+tokens_seen+configs)
   evaluate.py                            # token-weighted CE loss + perplexity over a DataLoader
   train.py                                # training loop + get_lr (warmup/cosine) + main(); VRAM/time/JSONL results logging
@@ -148,6 +149,7 @@ tests/test_overfit.py                           # trains on a handful of chunks,
 tests/test_packed_mask.py                        # build_packed_attn_mask correctness (EOS boundaries, batching)
 tests/test_sharing_variants.py                    # forward/backward + checkpoint round-trip for all 3 variants
 tests/test_data_pipeline.py                        # chunk shift semantics, --max-tokens truncation, dataset getitem
+tests/test_resume_data_order.py                    # interrupted+resumed run matches an uninterrupted one (same batches)
 ```
 
 ### Weight-sharing design
@@ -182,6 +184,13 @@ loaded into RAM.
   `loss / grad_accum_steps` before `.backward()`), then a single `clip_grad_norm_` + `optimizer.step()`.
 - `tokens_seen` is `batch_size * dataset.seq_len * grad_accum_steps` per optimizer step, persisted in
   checkpoints and resumed from there — not reset to 0 on `--resume`.
+- Train batches come from `data/sampler.py::ResumableShuffleBatchSampler`, whose shuffle order depends
+  only on `TrainConfig.seed` (not on the global RNG, so it is the same for every model config) and
+  which `--resume` re-enters at batch `step * grad_accum_steps`. A resumed run therefore sees exactly
+  the batches an uninterrupted run would have; resuming with a different `batch_size`/
+  `grad_accum_steps`/`seed` than the checkpoint's is rejected. Runs made before this fix replayed the
+  shuffle from the top on every resume (some data seen repeatedly, the tail never seen) — in
+  `results.jsonl` that affects `shared_attn2_1200`, `standard_1024`, `shared_full_1024`, `standard_880`.
 - `evaluate()` (`evaluate.py`) computes loss weighted by token count (sum of `loss * n_tokens` divided
   by total tokens, then `exp`), not a mean-of-batch-means, so it stays correct if batch token counts
   ever differ.

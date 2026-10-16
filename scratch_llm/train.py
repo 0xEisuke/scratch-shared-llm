@@ -3,7 +3,6 @@ import json
 import math
 import os
 import time
-from typing import Iterator, Tuple
 
 import torch
 from torch.utils.data import DataLoader
@@ -11,6 +10,7 @@ from torch.utils.data import DataLoader
 from scratch_llm.checkpoint import load_checkpoint, save_checkpoint
 from scratch_llm.config import ModelConfig, TrainConfig, load_yaml_config
 from scratch_llm.data.dataset import ChunkedTokenDataset
+from scratch_llm.data.sampler import ResumableShuffleBatchSampler
 from scratch_llm.evaluate import evaluate
 from scratch_llm.model.params import count_parameters, format_breakdown
 from scratch_llm.model.transformer import Transformer
@@ -26,16 +26,6 @@ def get_lr(step: int, cfg: TrainConfig) -> float:
     decay_ratio = (step - cfg.warmup_steps) / max(1, cfg.max_steps - cfg.warmup_steps)
     coeff = 0.5 * (1.0 + math.cos(math.pi * decay_ratio))
     return cfg.min_lr + coeff * (cfg.lr - cfg.min_lr)
-
-
-def cycle(loader: DataLoader) -> Iterator[Tuple[torch.Tensor, torch.Tensor]]:
-    epoch = 0
-    while True:
-        epoch += 1
-        if epoch > 1:
-            print(f"warning: starting epoch {epoch} over this data loader (dataset is repeating)")
-        for batch in loader:
-            yield batch
 
 
 def build_model_and_optimizer(model_cfg: ModelConfig, train_cfg: TrainConfig, device: torch.device):
@@ -60,6 +50,7 @@ def train(
     max_steps: int = None,
     batch_size: int = None,
     grad_accum_steps: int = None,
+    save_interval: int = None,
 ) -> dict:
     model_cfg = load_yaml_config(model_config_path, ModelConfig)
     train_cfg = load_yaml_config(train_config_path, TrainConfig)
@@ -79,6 +70,8 @@ def train(
         train_cfg.batch_size = batch_size
     if grad_accum_steps is not None:
         train_cfg.grad_accum_steps = grad_accum_steps
+    if save_interval is not None:
+        train_cfg.save_interval = save_interval
 
     torch.manual_seed(train_cfg.seed)
     device = torch.device(train_cfg.device if torch.cuda.is_available() else "cpu")
@@ -92,9 +85,7 @@ def train(
 
     train_ds = ChunkedTokenDataset(data_dir, "train")
     val_ds = ChunkedTokenDataset(data_dir, "val")
-    train_loader = DataLoader(train_ds, batch_size=train_cfg.batch_size, shuffle=True, drop_last=True)
     val_loader = DataLoader(val_ds, batch_size=train_cfg.batch_size, shuffle=False, drop_last=False)
-    train_iter = cycle(train_loader)
 
     step = 0
     tokens_seen = 0
@@ -102,7 +93,27 @@ def train(
         ckpt = load_checkpoint(resume, model, optimizer, map_location=str(device))
         step = ckpt["step"]
         tokens_seen = ckpt["tokens_seen"]
+        # The data position is recovered as step * grad_accum_steps batches
+        # into the seeded shuffle, which only holds if these are unchanged.
+        for key in ("batch_size", "grad_accum_steps", "seed"):
+            saved = ckpt["train_config"][key]
+            if saved != getattr(train_cfg, key):
+                raise ValueError(
+                    f"cannot resume: {key} is {getattr(train_cfg, key)} but the checkpoint was "
+                    f"trained with {saved}, so the data order would not line up"
+                )
         print(f"Resumed from {resume} at step={step} tokens_seen={tokens_seen}")
+
+    # Train batches come from a sampler whose order depends only on the seed
+    # and that starts at the batch an uninterrupted run would reach at this
+    # step, so resuming continues the same shuffle instead of replaying it.
+    train_sampler = ResumableShuffleBatchSampler(
+        len(train_ds),
+        train_cfg.batch_size,
+        train_cfg.seed,
+        start_batch=step * train_cfg.grad_accum_steps,
+    )
+    train_iter = iter(DataLoader(train_ds, batch_sampler=train_sampler))
 
     os.makedirs(train_cfg.out_dir, exist_ok=True)
     tokens_per_optim_step = train_cfg.batch_size * train_ds.seq_len * train_cfg.grad_accum_steps
@@ -210,6 +221,7 @@ def main() -> None:
     parser.add_argument(
         "--grad-accum-steps", type=int, default=None, help="Override train-config grad_accum_steps"
     )
+    parser.add_argument("--save-interval", type=int, default=None, help="Override train-config save_interval")
     args = parser.parse_args()
 
     train(
@@ -223,6 +235,7 @@ def main() -> None:
         max_steps=args.max_steps,
         batch_size=args.batch_size,
         grad_accum_steps=args.grad_accum_steps,
+        save_interval=args.save_interval,
     )
 
 
